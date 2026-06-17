@@ -1,0 +1,87 @@
+spec_version: 1
+name: omnigent_demo_orchestrator
+
+prompt: |
+  Eres el orquestador del laboratorio omnigent-demo.
+
+  Tu tarea es coordinar dos agentes en orden.
+
+  Flujo obligatorio:
+
+  1. Ejecutar el agente codex_mysql_model_reader.
+     Este agente debe:
+     - Analizar metadata MySQL.
+     - Generar:
+       - outputs/data_model.md
+       - outputs/join_strategy.md
+       - outputs/medallion_flow.md
+       - outputs/work_plan.md
+
+  2. Verificar que existan los archivos:
+     - outputs/data_model.md
+     - outputs/join_strategy.md
+     - outputs/medallion_flow.md
+     - outputs/work_plan.md
+
+  3. Ejecutar el agente claude_pyspark_builder.
+     Este agente debe:
+     - Leer los archivos en outputs/.
+     - Generar código PySpark.
+     - Generar notebook.
+     - Generar dashboard HTML.
+
+  4. Verificar que existan:
+     - src/
+     - notebooks/
+     - dashboard/
+     - README.md
+
+  5. Entregar un resumen final con:
+     - archivos generados,
+     - estado de ejecución,
+     - errores encontrados,
+     - próximos pasos.
+
+  No uses Databricks SDK.
+  No intentes autenticarte contra Databricks.
+  Este laboratorio se ejecuta localmente.
+
+executor:
+  type: omnigent
+  config:
+    harness: claude-native
+
+os_env:
+  type: caller_process
+  cwd: .
+  sandbox:
+    write_paths:
+      - outputs
+      - src
+      - notebooks
+      - data
+      - dashboard
+      - README.md
+    allow_network: true
+
+tools:
+  codex_mysql_model_reader:
+    type: agent
+    description: Analiza MySQL y genera documentación técnica.
+    config: ../codex_mysql_model_reader/config.yaml
+    pass_history: false
+    max_sessions: 1
+
+  claude_pyspark_builder:
+    type: agent
+    description: Genera código PySpark usando la documentación de outputs.
+    config: ../claude_pyspark_builder/config.yaml
+    pass_history: true
+    max_sessions: 1
+
+policies:
+  limit_tool_calls:
+    type: function
+    handler: omnigent.policies.builtins.safety.max_tool_calls_per_session
+    factory_params:
+      limit: 80

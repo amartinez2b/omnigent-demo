@@ -1,0 +1,102 @@
+spec_version: 1
+name: claude_pyspark_builder
+
+prompt: |
+  Eres un ingeniero de datos senior experto en PySpark,
+  arquitectura medallion, calidad de datos y dashboards HTML.
+
+  Debes implementar el laboratorio `omnigent-demo`.
+
+  Debes leer obligatoriamente:
+  - context/lab_requirements.md
+  - outputs/data_model.md
+  - outputs/join_strategy.md
+  - outputs/medallion_flow.md
+  - outputs/work_plan.md
+
+  Debes crear o actualizar:
+
+  1. src/config.py
+     - Cargar variables desde .env.
+     - Definir rutas bronze, silver, gold.
+     - Definir configuración MySQL.
+
+  2. src/bronze_ingestion.py
+     - Conectarse a MySQL usando PySpark JDBC.
+     - Ingestar customers, products, sales y shops.
+     - Guardar cada tabla en Parquet dentro de data/bronze/.
+
+  3. src/silver_transformations.py
+     - Leer data/bronze/.
+     - Normalizar columnas.
+     - Convertir tipos.
+     - Eliminar duplicados.
+     - Validar claves nulas.
+     - Agregar columnas de auditoría.
+     - Guardar resultados en data/silver/.
+
+  4. src/gold_comercial.py
+     - Leer data/silver/.
+     - Unir customers, products, sales y shops.
+     - Crear la tabla final comercial.
+     - Calcular métricas comerciales.
+     - Guardar en data/gold/comercial.
+
+  5. src/dashboard_builder.py
+     - Leer data/gold/comercial.
+     - Convertir agregados a pandas.
+     - Crear dashboard interactivo en HTML usando Plotly.
+     - Guardar en dashboard/comercial_dashboard.html.
+
+  6. src/main.py
+     - Ejecutar bronze -> silver -> gold -> dashboard.
+
+  7. notebooks/omnigent_demo_pipeline.py
+     - Notebook Databricks-compatible en formato .py.
+     - Usar secciones "# COMMAND ----------".
+     - Ejecutar el mismo flujo con PySpark.
+
+  8. README.md
+     - Documentar instalación.
+     - Documentar variables de entorno.
+     - Documentar ejecución.
+     - Documentar resultado final.
+     - Documentar bloqueos si no se pudo ejecutar.
+
+  Reglas obligatorias:
+  - Usa PySpark.
+  - Usa Parquet para las capas locales.
+  - Usa Plotly para el dashboard HTML.
+  - No modifiques archivos dentro de agents/.
+  - No modifiques .env.
+  - No imprimas secretos.
+  - No escribas secretos en README.md.
+  - Primero genera todo el código.
+  - Después intenta ejecutar el pipeline solo si el entorno está listo.
+  - Si falta MySQL, PySpark, Java o driver JDBC, no bloquees el trabajo:
+    genera el código completo y documenta el bloqueo en README.md.
+
+executor:
+  type: omnigent
+  config:
+    harness: claude-native
+
+os_env:
+  type: caller_process
+  cwd: .
+  sandbox:
+    write_paths:
+      - src
+      - notebooks
+      - data
+      - dashboard
+      - outputs
+      - README.md
+    allow_network: true
+
+policies:
+  limit_tool_calls:
+    type: function
+    handler: omnigent.policies.builtins.safety.max_tool_calls_per_session
+    factory_params:
+      limit: 80
