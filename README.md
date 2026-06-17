@@ -60,11 +60,11 @@ Crea un archivo `.env` en la raíz del proyecto:
 
 ```env
 # MySQL Configuration
-MYSQL_HOST=www.bigdataybi.com
+MYSQL_HOST=localhost
 MYSQL_PORT=3306
-MYSQL_DATABASE=fake
-MYSQL_USER=curso
-MYSQL_PASSWORD=Password123!
+MYSQL_DATABASE=database
+MYSQL_USER=read-user
+MYSQL_PASSWORD=SECRET
 
 # Paths
 BRONZE_PATH=data/bronze
